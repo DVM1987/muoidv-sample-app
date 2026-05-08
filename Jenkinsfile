@@ -66,7 +66,6 @@ spec:
       steps {
         container('docker') {
           sh '''
-            apk add --no-cache aws-cli
             cd app
             docker build \
               --platform linux/amd64 \
@@ -80,11 +79,19 @@ spec:
 
     stage('Push to ECR') {
       steps {
-        container('docker') {
+        container('tools') {
           sh '''
             aws ecr get-login-password --region ${AWS_REGION} \
+              > /home/jenkins/agent/ecr-password.txt
+            chmod 600 /home/jenkins/agent/ecr-password.txt
+          '''
+        }
+        container('docker') {
+          sh '''
+            cat /home/jenkins/agent/ecr-password.txt \
               | docker login --username AWS --password-stdin ${ECR_REGISTRY}
             docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+            rm -f /home/jenkins/agent/ecr-password.txt
           '''
         }
       }
