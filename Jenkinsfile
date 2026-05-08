@@ -66,6 +66,19 @@ spec:
       steps {
         container('docker') {
           sh '''
+            echo "Waiting for Docker daemon..."
+            for i in $(seq 1 60); do
+              if docker info > /dev/null 2>&1; then
+                echo "Docker daemon ready (after ${i}s)"
+                break
+              fi
+              if [ $i -eq 60 ]; then
+                echo "ERROR: Docker daemon not ready after 60s"
+                exit 1
+              fi
+              sleep 1
+            done
+
             cd app
             docker build \
               --platform linux/amd64 \
