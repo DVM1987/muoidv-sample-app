@@ -94,17 +94,30 @@ spec:
       steps {
         container('tools') {
           sh '''
-            aws ecr get-login-password --region ${AWS_REGION} \
-              > /home/jenkins/agent/ecr-password.txt
-            chmod 600 /home/jenkins/agent/ecr-password.txt
+            if aws ecr describe-images \
+                --repository-name ${ECR_REPO} \
+                --image-ids imageTag=${IMAGE_TAG} \
+                --region ${AWS_REGION} > /dev/null 2>&1; then
+              echo "Image tag ${IMAGE_TAG} already exists in ECR — skip push (idempotent)"
+              touch /home/jenkins/agent/skip-push.flag
+            else
+              aws ecr get-login-password --region ${AWS_REGION} \
+                > /home/jenkins/agent/ecr-password.txt
+              chmod 600 /home/jenkins/agent/ecr-password.txt
+            fi
           '''
         }
         container('docker') {
           sh '''
-            cat /home/jenkins/agent/ecr-password.txt \
-              | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-            docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
-            rm -f /home/jenkins/agent/ecr-password.txt
+            if [ -f /home/jenkins/agent/skip-push.flag ]; then
+              echo "Push skipped (image already in ECR from previous build)"
+              rm -f /home/jenkins/agent/skip-push.flag
+            else
+              cat /home/jenkins/agent/ecr-password.txt \
+                | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+              docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+              rm -f /home/jenkins/agent/ecr-password.txt
+            fi
           '''
         }
       }
