@@ -1,0 +1,16 @@
+{
+  "name": "muoidv-sample-app",
+  "version": "1.0.0",
+  "description": "Sample app for muoidv CI/CD lab — Express + pg client, monolith serving static frontend + REST API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

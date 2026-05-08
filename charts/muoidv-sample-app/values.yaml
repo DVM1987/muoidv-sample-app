@@ -1,0 +1,49 @@
+# Override naming if needed (default = chart name from Chart.yaml)
+nameOverride: ""
+fullnameOverride: ""
+
+# Namespace
+namespace:
+  create: false                       # ns muoidv-data đã tồn tại từ Sub-comp 08
+  name: muoidv-data
+
+# Replicas
+replicaCount: 2
+
+# Image — Layer 3 đã push manual-v1, Jenkins L7 sẽ override --set image.tag=sha-xxx
+image:
+  repository: 527055790396.dkr.ecr.ap-southeast-1.amazonaws.com/muoidv-sample-app
+  tag: manual-v1
+  pullPolicy: IfNotPresent
+
+# Service
+service:
+  type: ClusterIP
+  port: 80
+
+# Ingress (LBC + ALB share group muoidv-public)
+ingress:
+  enabled: true
+  className: alb
+  host: app.muoidv.do2602.click
+  groupName: muoidv-public
+  certificateArn: arn:aws:acm:ap-southeast-1:527055790396:certificate/a6d1ceb5-9241-4170-8d17-1402d1c30092
+
+# Database — connect PG Sub-comp 08 in-cluster
+db:
+  host: muoidv-postgresql.muoidv-data.svc.cluster.local
+  port: 5432
+  name: muoidvdb
+  user: muoidvapp
+  passwordSecret:
+    name: muoidv-postgresql           # Secret K8s có sẵn từ Sub-comp 08
+    key: password                     # 'password' = app user, 'postgres-password' = superuser
+
+# Resource requests/limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
